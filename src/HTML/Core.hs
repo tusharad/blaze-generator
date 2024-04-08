@@ -25,10 +25,11 @@ pText :: Parser HTMLElement
 pText = TextNode.(T.pack) <$> some (noneOf ['<','>'])
 
 pContents :: Parser [HTMLElement]
-pContents = many (try pHtmlElement <|> try selfClosingTag <|> pText)
+pContents = many (try pHtmlElement <|> try selfClosingTag <|> try pComment <|> pText)
 
 pComment :: Parser HTMLElement
-pComment = CommentNode.(T.pack) <$> between (string "<!--") (string "-->") (many alphaNumChar)
+pComment = CommentNode.(T.pack) <$> between (string "<!--") (string "-->") 
+  (many (alphaNumChar <|> char ' '))
 
 selfClosingTag :: Parser HTMLElement
 selfClosingTag = do
@@ -42,7 +43,7 @@ selfClosingTag = do
 pAttribute :: Parser (Text,Text)
 pAttribute = do
   key   <- some (alphaNumChar <|> char '-')
-  _     <- char '='
+  _     <- try $ char '='
   value <- between (char '"') (char '"') (many (alphaNumChar
     <|> char '-'
     <|> char '.'
@@ -50,6 +51,11 @@ pAttribute = do
     <|> char '.'
     <|> char ' '
     <|> char '#'
+    <|> char '/'
+    <|> char ':'
+    <|> char '+'
+    <|> char '='
+    <|> char ','
     ))
   pure (T.pack key,T.pack value)
 
