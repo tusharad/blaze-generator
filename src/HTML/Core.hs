@@ -56,6 +56,7 @@ pAttribute = do
     <|> char '+'
     <|> char '='
     <|> char ','
+    <|> char '/'
     ))
   pure (T.pack key,T.pack value)
 
@@ -66,16 +67,18 @@ pHtmlElement :: Parser HTMLElement
 pHtmlElement = do
   (name,attr)  <- pOpenTag
   _ <- many (char '\n' <|> char ' ' <|> char '\t')
-  inner <- pContents
-  _ <- many (char '\n' <|> char ' ' <|> char '\t')
-  closeName     <- pCloseTag
-  _ <- many (char '\n' <|> char ' ' <|> char '\t')
-  (if name == closeName then return $ HTMLElement name attr inner else failure Nothing mempty)
+  if (name == "input" || name == "link" || name == "meta") then return $ SelfClosingTag name attr
+  else do
+    inner <- pContents
+    _ <- many (char '\n' <|> char ' ' <|> char '\t')
+    closeName     <- pCloseTag
+    _ <- many (char '\n' <|> char ' ' <|> char '\t')
+    if (name /= closeName) then error "tag imbalance" else return $ HTMLElement name attr inner 
 
 htmlDocument :: Parser [HTMLElement]
 htmlDocument = between sc (many space1 <* eof) (many pHtmlElement)
 
 toHTMLElement :: Text -> Either Text [HTMLElement]
 toHTMLElement content = case parse htmlDocument "" content of
-  Left _ -> Left "Parsing Failed :("
+  Left _ -> Left "parsing failed"
   Right r -> Right r
