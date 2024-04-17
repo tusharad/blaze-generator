@@ -46,6 +46,7 @@ pAttribute = do
   _     <- try $ char '='
   value <- between (char '"') (char '"') (many (alphaNumChar
     <|> char '-'
+    <|> char '_'
     <|> char '.'
     <|> char '@'
     <|> char '.'
@@ -67,13 +68,13 @@ pHtmlElement :: Parser HTMLElement
 pHtmlElement = do
   (name,attr)  <- pOpenTag
   _ <- many (char '\n' <|> char ' ' <|> char '\t')
-  if (name == "input" || name == "link" || name == "meta") then return $ SelfClosingTag name attr
+  if (name == "input" || name == "link" || name == "meta" || name == "br") then return $ SelfClosingTag name attr
   else do
     inner <- pContents
     _ <- many (char '\n' <|> char ' ' <|> char '\t')
     closeName     <- pCloseTag
     _ <- many (char '\n' <|> char ' ' <|> char '\t')
-    if (name /= closeName) then error "tag imbalance" else return $ HTMLElement name attr inner 
+    if (name /= closeName) then error "tag imabalance or tag without ending tag" else return $ HTMLElement name attr inner 
 
 htmlDocument :: Parser [HTMLElement]
 htmlDocument = between sc (many space1 <* eof) (many pHtmlElement)

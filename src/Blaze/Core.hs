@@ -14,6 +14,7 @@ import           Text.Megaparsec
 
 toAttrs :: Text -> Text
 toAttrs "class" = "class_"
+toAttrs "type" = "type_"
 toAttrs k = k
 
 attributesToString :: Map.Map Text Text -> Text
